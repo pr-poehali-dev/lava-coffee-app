@@ -3,11 +3,24 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/hooks/use-toast';
 import Icon from '@/components/ui/icon';
 
 const Index = () => {
-  const [cartItems, setCartItems] = useState<{id: number, name: string, price: number, quantity: number}[]>([]);
+  const [cartItems, setCartItems] = useState<{id: number, name: string, price: number, quantity: number, isFavorite?: boolean}[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('Все');
+  const [favorites, setFavorites] = useState<number[]>([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState('');
 
   const menuItems = [
     {
@@ -86,6 +99,47 @@ const Index = () => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
   };
 
+  const updateQuantity = (id: number, newQuantity: number) => {
+    if (newQuantity === 0) {
+      removeFromCart(id);
+      return;
+    }
+    setCartItems(prev => prev.map(item => 
+      item.id === id ? { ...item, quantity: newQuantity } : item
+    ));
+  };
+
+  const toggleFavorite = (id: number) => {
+    setFavorites(prev => 
+      prev.includes(id) 
+        ? prev.filter(fId => fId !== id)
+        : [...prev, id]
+    );
+  };
+
+  const handleLogin = (email: string, password: string) => {
+    setIsLoggedIn(true);
+    setUserName(email.split('@')[0]);
+    setAuthOpen(false);
+    toast({ title: 'Добро пожаловать!', description: 'Вы успешно авторизованы' });
+  };
+
+  const handlePayment = () => {
+    setPaymentOpen(false);
+    setSuccessOpen(true);
+    setCartItems([]);
+    toast({ title: 'Заказ оформлен!', description: 'Ваш заказ принят в обработку' });
+  };
+
+  const categories = ['Все', 'Горячие напитки', 'Холодные напитки'];
+  
+  const filteredItems = menuItems.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         item.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'Все' || item.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -114,9 +168,80 @@ const Index = () => {
                 )}
               </Button>
               
-              <Button variant="outline" size="sm" className="border-lava-green text-lava-navy hover:bg-lava-green hover:text-lava-cream">
-                <Icon name="User" size={18} />
-              </Button>
+              <Dialog open={authOpen} onOpenChange={setAuthOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="border-lava-green text-lava-navy hover:bg-lava-green hover:text-lava-cream">
+                    <Icon name="User" size={18} />
+                    {isLoggedIn && <span className="ml-2 hidden sm:inline">{userName}</span>}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="text-lava-navy">{isLoggedIn ? 'Профиль' : 'Вход в аккаунт'}</DialogTitle>
+                  </DialogHeader>
+                  {isLoggedIn ? (
+                    <div className="space-y-4">
+                      <div className="text-center p-6">
+                        <div className="w-16 h-16 bg-lava-green rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Icon name="User" size={32} className="text-lava-cream" />
+                        </div>
+                        <h3 className="text-lg font-bold text-lava-navy mb-2">{userName}</h3>
+                        <p className="text-lava-navy/70 text-sm mb-4">Пользователь LAVA</p>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => { setIsLoggedIn(false); setUserName(''); setAuthOpen(false); }}
+                          className="border-lava-green text-lava-navy hover:bg-lava-green hover:text-lava-cream"
+                        >
+                          Выйти
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <Tabs defaultValue="login" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="login">Вход</TabsTrigger>
+                        <TabsTrigger value="register">Регистрация</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="login" className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="login-email">Email</Label>
+                          <Input id="login-email" type="email" placeholder="your@email.com" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="login-password">Пароль</Label>
+                          <Input id="login-password" type="password" placeholder="*********" />
+                        </div>
+                        <Button 
+                          className="w-full bg-lava-green hover:bg-lava-green/90 text-lava-cream"
+                          onClick={() => handleLogin('user@example.com', 'password')}
+                        >
+                          Войти
+                        </Button>
+                      </TabsContent>
+                      <TabsContent value="register" className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="register-name">Имя</Label>
+                          <Input id="register-name" placeholder="Ваше имя" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="register-email">Email</Label>
+                          <Input id="register-email" type="email" placeholder="your@email.com" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="register-password">Пароль</Label>
+                          <Input id="register-password" type="password" placeholder="*********" />
+                        </div>
+                        <Button 
+                          className="w-full bg-lava-green hover:bg-lava-green/90 text-lava-cream"
+                          onClick={() => handleLogin('newuser@example.com', 'password')}
+                        >
+                          Зарегистрироваться
+                        </Button>
+                      </TabsContent>
+                    </Tabs>
+                  )}
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </div>
@@ -147,10 +272,41 @@ const Index = () => {
       {/* Menu Section */}
       <section className="py-16 px-4">
         <div className="container mx-auto">
-          <h3 className="text-3xl font-bold text-center text-lava-navy mb-12">Наше меню</h3>
+          <h3 className="text-3xl font-bold text-center text-lava-navy mb-8">Наше меню</h3>
+          
+          {/* Search and Filters */}
+          <div className="max-w-4xl mx-auto mb-8">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <div className="flex-1">
+                <Input
+                  placeholder="Поиск по названию..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2 justify-center">
+              {categories.map(category => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedCategory(category)}
+                  className={selectedCategory === category 
+                    ? "bg-lava-green text-lava-cream" 
+                    : "border-lava-green text-lava-navy hover:bg-lava-green hover:text-lava-cream"
+                  }
+                >
+                  {category}
+                </Button>
+              ))}
+            </div>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {menuItems.map((item) => (
+            {filteredItems.map((item) => (
               <Card key={item.id} className="group hover:shadow-lg transition-all duration-300 border-lava-green/20 hover:border-lava-green/40">
                 <CardHeader className="p-0">
                   <div className="aspect-square relative overflow-hidden rounded-t-lg">
@@ -163,6 +319,20 @@ const Index = () => {
                       <Badge variant="secondary" className="bg-lava-cream/90 text-lava-navy">
                         {item.category}
                       </Badge>
+                    </div>
+                    <div className="absolute top-3 right-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleFavorite(item.id)}
+                        className="bg-white/80 hover:bg-white p-2 h-auto"
+                      >
+                        <Icon 
+                          name="Heart" 
+                          size={16} 
+                          className={favorites.includes(item.id) ? "text-red-500 fill-current" : "text-gray-500"}
+                        />
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -211,13 +381,34 @@ const Index = () => {
               <>
                 <div className="space-y-4 mb-6">
                   {cartItems.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between p-3 bg-lava-cream/30 rounded-lg">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-lava-navy">{item.name}</h4>
-                        <p className="text-sm text-lava-navy/70">{item.price}₽ × {item.quantity}</p>
-                      </div>
-                      <div className="flex items-center space-x-2">
+                    <div key={item.id} className="p-4 bg-lava-cream/30 rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-lava-navy">{item.name}</h4>
+                          <p className="text-sm text-lava-navy/70">{item.price}₽ каждый</p>
+                        </div>
                         <span className="font-bold text-lava-green">{item.price * item.quantity}₽</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            className="h-8 w-8 p-0 border-lava-green"
+                          >
+                            <Icon name="Minus" size={12} />
+                          </Button>
+                          <span className="w-8 text-center font-medium">{item.quantity}</span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            className="h-8 w-8 p-0 border-lava-green"
+                          >
+                            <Icon name="Plus" size={12} />
+                          </Button>
+                        </div>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -239,10 +430,63 @@ const Index = () => {
                 </div>
 
                 <div className="space-y-3">
-                  <Button className="w-full bg-lava-green hover:bg-lava-green/90 text-lava-cream">
-                    <Icon name="CreditCard" size={18} className="mr-2" />
-                    Оплатить заказ
-                  </Button>
+                  <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="w-full bg-lava-green hover:bg-lava-green/90 text-lava-cream">
+                        <Icon name="CreditCard" size={18} className="mr-2" />
+                        Оплатить заказ
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle className="text-lava-navy">Оплата заказа</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-6">
+                        <div className="bg-lava-cream/50 p-4 rounded-lg">
+                          <h4 className="font-medium text-lava-navy mb-2">Ваш заказ:</h4>
+                          {cartItems.map(item => (
+                            <div key={item.id} className="flex justify-between text-sm text-lava-navy/80">
+                              <span>{item.name} ×{item.quantity}</span>
+                              <span>{item.price * item.quantity}₽</span>
+                            </div>
+                          ))}
+                          <div className="border-t border-lava-green/20 mt-2 pt-2 flex justify-between font-bold text-lava-navy">
+                            <span>Итого:</span>
+                            <span>{getTotalPrice()}₽</span>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label>Номер карты</Label>
+                            <Input placeholder="1234 5678 9012 3456" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="space-y-2">
+                              <Label>ММ/ГГ</Label>
+                              <Input placeholder="12/25" />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>CVV</Label>
+                              <Input placeholder="123" />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Адрес доставки</Label>
+                            <Textarea placeholder="Укажите адрес..." />
+                          </div>
+                        </div>
+                        
+                        <Button 
+                          className="w-full bg-lava-green hover:bg-lava-green/90 text-lava-cream"
+                          onClick={handlePayment}
+                        >
+                          <Icon name="CreditCard" size={18} className="mr-2" />
+                          Оплатить {getTotalPrice()}₽
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                   
                   <Button variant="outline" className="w-full border-lava-green text-lava-navy hover:bg-lava-green hover:text-lava-cream">
                     <Icon name="Phone" size={18} className="mr-2" />
@@ -315,6 +559,44 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      {/* Success Modal */}
+      <Dialog open={successOpen} onOpenChange={setSuccessOpen}>
+        <DialogContent className="sm:max-w-md text-center">
+          <div className="p-6">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Icon name="CheckCircle" size={32} className="text-green-600" />
+            </div>
+            <DialogTitle className="text-2xl font-bold text-lava-navy mb-2">
+              Заказ успешно оформлен! 🎉
+            </DialogTitle>
+            <p className="text-lava-navy/70 mb-6">
+              Ваш заказ #LA{Math.floor(Math.random() * 10000)} принят в обработку.
+              Ожидайте доставку в течение 30-45 минут.
+            </p>
+            <div className="space-y-3">
+              <Button 
+                className="w-full bg-lava-green hover:bg-lava-green/90 text-lava-cream"
+                onClick={() => setSuccessOpen(false)}
+              >
+                <Icon name="Coffee" size={18} className="mr-2" />
+                Продолжить покупки
+              </Button>
+              <Button 
+                variant="outline" 
+                className="w-full border-lava-green text-lava-navy hover:bg-lava-green hover:text-lava-cream"
+                onClick={() => {
+                  setSuccessOpen(false);
+                  toast({ title: 'Уведомления включены', description: 'Мы отправим SMS когда заказ будет готов' });
+                }}
+              >
+                <Icon name="Bell" size={18} className="mr-2" />
+                Отслеживать заказ
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
