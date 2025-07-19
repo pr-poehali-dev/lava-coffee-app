@@ -47,10 +47,10 @@ const MenuSection = ({
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="flex-1">
               <Input
-                placeholder="Поиск по названию..."
+                placeholder="🔍 Поиск по названию..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
+                className="w-full rounded-3xl border-lava-green/30 bg-lava-cream/50 backdrop-blur-sm shadow-lg focus:shadow-xl transition-all duration-300"
               />
             </div>
           </div>
@@ -63,8 +63,8 @@ const MenuSection = ({
                 size="sm"
                 onClick={() => setSelectedCategory(category)}
                 className={selectedCategory === category 
-                  ? "bg-lava-green text-lava-cream" 
-                  : "border-lava-green text-lava-navy hover:bg-lava-green hover:text-lava-cream"
+                  ? "bg-gradient-to-r from-lava-green to-lava-navy text-lava-cream rounded-2xl shadow-lg" 
+                  : "border-lava-green text-lava-navy hover:bg-lava-green hover:text-lava-cream rounded-2xl backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:scale-105"
                 }
               >
                 {category}
@@ -75,16 +75,16 @@ const MenuSection = ({
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredItems.map((item) => (
-            <Card key={item.id} className="group hover:shadow-lg transition-all duration-300 border-lava-green/20 hover:border-lava-green/40">
+            <Card key={item.id} className="group hover:shadow-2xl transition-all duration-500 border-lava-green/20 hover:border-lava-green/40 rounded-3xl bg-white/80 backdrop-blur-lg hover:bg-white/90 hover:scale-105">
               <CardHeader className="p-0">
-                <div className="aspect-square relative overflow-hidden rounded-t-lg">
+                <div className="aspect-square relative overflow-hidden rounded-t-3xl">
                   <img 
                     src={item.image} 
                     alt={item.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                   />
                   <div className="absolute top-3 left-3">
-                    <Badge variant="secondary" className="bg-lava-cream/90 text-lava-navy">
+                    <Badge variant="secondary" className="bg-lava-cream/95 backdrop-blur-md text-lava-navy rounded-2xl shadow-lg border border-lava-green/20">
                       {item.category}
                     </Badge>
                   </div>
@@ -93,7 +93,7 @@ const MenuSection = ({
                       variant="ghost"
                       size="sm"
                       onClick={() => toggleFavorite(item.id)}
-                      className="bg-white/80 hover:bg-white p-2 h-auto"
+                      className="bg-white/90 backdrop-blur-md hover:bg-white p-2 h-auto rounded-2xl shadow-lg border border-lava-green/20 transition-all duration-300 hover:scale-110"
                     >
                       <Icon 
                         name="Heart" 
@@ -113,7 +113,7 @@ const MenuSection = ({
               </CardContent>
               <CardFooter className="p-4 pt-0">
                 <Button 
-                  className="w-full bg-lava-green hover:bg-lava-green/90 text-lava-cream"
+                  className="w-full bg-gradient-to-r from-lava-green to-lava-navy hover:from-lava-navy hover:to-lava-green text-lava-cream rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105"
                   onClick={() => addToCart(item)}
                 >
                   <Icon name="Plus" size={16} className="mr-2" />
